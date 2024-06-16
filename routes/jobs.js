@@ -1,11 +1,14 @@
 "use strict";
 
-// Import required modules
+/** Routes for jobs. */
+
 const jsonschema = require("jsonschema");
 const express = require("express");
+
 const { BadRequestError } = require("../expressError");
 const { ensureAdmin } = require("../middleware/auth");
 const Job = require("../models/job");
+
 const jobNewSchema = require("../schemas/jobNew.json");
 const jobUpdateSchema = require("../schemas/jobUpdate.json");
 const jobSearchSchema = require("../schemas/jobSearch.json");
@@ -40,17 +43,35 @@ router.post("/", ensureAdmin, async function (req, res, next) {
 /** GET / =>
  * Retrieve all jobs or filter jobs based on query parameters.
  * Query parameters:
- * - minSalary: minimum salary
- * - hasEquity: filter by equity (true returns only jobs with equity > 0)
- * - title: filter by job title (case-insensitive, partial matches)
+ * - minSalary: minimum salary (cannot be null)
+ * - hasEquity: filter by equity (returns true only jobs with equity > 0
+     and false if equity === 0)
+ * - title: filter by job title
  * Returns an array of jobs: { jobs: [ { id, title, salary, equity, companyHandle, companyName }, ...] }
  * Authorization required: none
  */
 router.get("/", async function (req, res, next) {
   const q = req.query;
   // Convert query string values to appropriate types
-  if (q.minSalary !== undefined) q.minSalary = +q.minSalary;
-  q.hasEquity = q.hasEquity === "true";
+  if (q.minSalary !== undefined){
+    if(q.minSalary !== null) {
+        q.minSalary = +q.minSalary;
+    }
+  }
+
+  if (q.equity !== undefined){
+    if(q.equity !== null && parseFloat(q.equity) > 0){
+        q.hasEquity = q.hasEquity === "true";
+    } else if (q.equity !== null && parseFloat(q.equity) === 0) {
+        q.hasEquity = q.hasEquity === "false";
+    }
+  }
+
+  if (req.query.hasOwnProperty('title')){
+    if(req.query.title !== undefined && req.query.title !== null){
+        q.title = req.query.title
+    }
+  }
 
   try {
     // Validate query parameters against schema

@@ -108,7 +108,7 @@ class User {
               u.last_name AS "lastName",
               u.email,
               u.is_admin AS "isAdmin",
-              ARRAY_AGG(a.job_id) AS jobs
+              COALESCE(ARRAY_AGG(a.job_id) FILTER (WHERE a.job_id IS NOT NULL), '{}') AS jobs
        FROM users AS u
        LEFT JOIN applications AS a ON u.username = a.username
        GROUP BY u.username
@@ -144,7 +144,7 @@ class User {
        FROM applications AS a
        WHERE a.username = $1`, [username]);
 
-    user.applications = userApplicationsRes.rows.map(a => a.job_id);
+    user.jobs = userApplicationsRes.rows.map(a => a.job_id);
     return user;
   }
 
@@ -212,7 +212,7 @@ class User {
    * Apply for a job with provided username and job ID.
    * Throws NotFoundError if job or username not found.
    **/
-  static async applyToJob(username, jobId) {
+  static async applyToJob(jobId, username) {
     // Check if the job exists
     const preCheck = await db.query(
       `SELECT id
@@ -236,6 +236,8 @@ class User {
       `INSERT INTO applications (job_id, username)
        VALUES ($1, $2)`,
       [jobId, username]);
+
+    return jobId;
   }
 }
 

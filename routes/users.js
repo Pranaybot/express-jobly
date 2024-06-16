@@ -3,12 +3,13 @@
 /** Routes for users. */
 
 const jsonschema = require("jsonschema"); // Importing JSON schema validation library
-
 const express = require("express");
+
 const { ensureCorrectUserOrAdmin, ensureAdmin } = require("../middleware/auth"); // Importing authorization middleware
 const { BadRequestError } = require("../expressError"); // Importing custom error handler
 const User = require("../models/user"); // Importing User model
 const { createToken } = require("../helpers/tokens"); // Importing token creation helper function
+
 const userNewSchema = require("../schemas/userNew.json"); // Importing JSON schema for new user
 const userUpdateSchema = require("../schemas/userUpdate.json"); // Importing JSON schema for updating user
 
@@ -22,7 +23,7 @@ const router = express.Router(); // Creating an instance of Express router
  * admin.
  *
  * This returns the newly created user and an authentication token for them:
- *  {user: { username, firstName, lastName, email, isAdmin }, token }
+ *  {user: { username, password, firstName, lastName, email, isAdmin }, token }
  *
  * Authorization required: admin
  **/
@@ -130,10 +131,8 @@ router.delete("/:username", ensureCorrectUserOrAdmin, async function (req, res, 
  * */
 router.post("/:username/jobs/:id", ensureCorrectUserOrAdmin, async function (req, res, next) {
   try {
-    // Parsing job ID from request parameters
-    const jobId = +req.params.id;
     // Applying for a job by the user
-    await User.applyToJob(req.params.username, jobId);
+    const jobId = await User.applyToJob(req.body.id, req.body.username);
     return res.json({ applied: jobId });
   } catch (err) {
     return next(err);

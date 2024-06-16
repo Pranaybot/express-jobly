@@ -12,8 +12,10 @@
       "type": "string"
     },
     "numEmployees": {
-      "type": "integer",
-      "minimum": 0
+      "anyOf": [
+        {"type": "integer", "minimum": 0},
+        { "type": "null" }
+      ]
     },
     "logoUrl": {
       "type": "string",

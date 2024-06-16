@@ -70,22 +70,51 @@ class Company {
    * Throws NotFoundError if not found.
    **/
   static async get(handle) {
-    // Retrieve company data from the database based on handle
-    const companyRes = await db.query(
-          `SELECT handle,
-                  name,
-                  description,
-                  num_employees AS "numEmployees",
-                  logo_url AS "logoUrl"
-           FROM companies
-           WHERE handle = $1`,
+    // Retrieve company data and its jobs in a single query
+    const result = await db.query(
+          `SELECT c.handle,
+                  c.name,
+                  c.description,
+                  c.num_employees AS "numEmployees",
+                  c.logo_url AS "logoUrl",
+                  j.id AS job_id,
+                  j.title AS job_title,
+                  j.salary AS job_salary,
+                  j.equity AS job_equity,
+                  j.company_handle AS job_companyHandle
+           FROM companies c
+           LEFT JOIN jobs j ON c.handle = j.company_handle
+           WHERE c.handle = $1`,
         [handle]);
 
-    // If company is not found, throw NotFoundError
-    const company = companyRes.rows[0];
-    if (!company) throw new NotFoundError(`No company: ${handle}`);
+    // If no rows are returned, throw NotFoundError
+    if (result.rows.length === 0) throw new NotFoundError(`No company: ${handle}`);
 
-    // Return the retrieved company data
+    // Extract company data from the first row
+    const { handle: companyHandle, name, description, numEmployees, logoUrl } = result.rows[0];
+
+    // Extract jobs data
+    const jobs = result.rows
+      .filter(row => row.job_id !== null)
+      .map(row => ({
+        id: row.job_id,
+        title: row.job_title,
+        salary: row.job_salary,
+        equity: row.job_equity,
+        companyHandle: row.job_companyHandle
+      }));
+
+    // Construct the company object
+    const company = {
+      handle: companyHandle,
+      name,
+      description,
+      numEmployees,
+      logoUrl,
+      jobs
+    };
+
+    // Return the combined company and jobs data
     return company;
   }
 

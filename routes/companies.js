@@ -49,7 +49,7 @@ router.post("/", ensureAdmin, async function (req, res, next) {
  * Can filter on provided search filters:
  * - minEmployees
  * - maxEmployees
- * - name (will find case-insensitive, partial matches)
+ * - name
  *
  * Authorization required: none
  *
@@ -66,6 +66,12 @@ router.get("/", async function (req, res, next) {
   // Check if minEmployees is greater than maxEmployees
   if (q.minEmployees !== undefined && q.maxEmployees !== undefined && q.minEmployees > q.maxEmployees) {
     throw new BadRequestError("minEmployees cannot be greater than maxEmployees");
+  }
+
+  if (req.query.hasOwnProperty('name')){
+    if(req.query.name !== undefined && req.query.name !== null){
+        q.title = req.query.name;
+    }
   }
 
   try {

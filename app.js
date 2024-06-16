@@ -10,6 +10,7 @@ const { NotFoundError } = require("./expressError");
 const { authenticateJWT } = require("./middleware/auth");
 const authRoutes = require("./routes/auth");
 const companiesRoutes = require("./routes/companies");
+const jobsRoutes = require("./routes/jobs");
 const usersRoutes = require("./routes/users");
 const indexRoute = require("./routes/index")
 
@@ -24,16 +25,17 @@ app.use(authenticateJWT);
 
 app.use("/auth", authRoutes);
 app.use("/companies", companiesRoutes);
+app.use("/jobs", jobsRoutes)
 app.use("/users", usersRoutes);
 app.use("/", indexRoute)
 
 
-Handle 404 errors -- this matches everything
+/** Handle 404 errors -- this matches everything */
 app.use(function (req, res, next) {
   return next(new NotFoundError());
 });
 
-Generic error handler; anything unhandled goes here.
+/** Generic error handler; anything unhandled goes here. */
 app.use(function (err, req, res, next) {
   if (process.env.NODE_ENV !== "test") console.error(err.stack);
   const status = err.status || 500;
